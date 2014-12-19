@@ -4,9 +4,11 @@ from SocketServer import TCPServer, ForkingMixIn, BaseRequestHandler
 import socket
 import fcntl
 import struct
+import logging
 import argparse
 
 SIOCGIFADDR = 0x8915
+LOG_FILE = "agamim.log"
 AGAMIM_FILE = "agamim.txt"
 DEFAULT_MESSAGE = [
     "A true Agamist never stops trying!\n",
@@ -27,18 +29,25 @@ def _get_ip_from_interface(interface):
 
 class AgamimRequestHandler(BaseRequestHandler):
     def handle(self):
+        (peer_ip, peer_port) = self.request.getpeername()
+        logging.info("Getting request from %s:%d", peer_ip, peer_port, )
+
         try:
             with open(AGAMIM_FILE, "rb") as file_:
                 lines = file_.readlines()
         except IOError:
+            logging.warning("Failed to read file '%s'", AGAMIM_FILE)
             lines = DEFAULT_MESSAGE
 
+        logging.info("Sending message")
         for line in lines:
             self.request.sendall("%s" % (line, ))
+        logging.info("Message sent")
 
     def finish(self):
         self.request.shutdown(0)
         self.request.close()
+        logging.info("Closed connection with peer")
 
 class AgamimServer(ForkingMixIn, TCPServer):
     def __init__(self, (host, port), request_handler):
@@ -63,12 +72,22 @@ def _parse_arguments():
 
 def run():
     arguments = _parse_arguments()
+    (ip, port) = (_get_ip_from_interface(arguments.iface), arguments.port)
 
-    server = AgamimServer(
-        (_get_ip_from_interface(arguments.iface), arguments.port),
-        AgamimRequestHandler)
+    # Setup logging.
+    logging.basicConfig(
+        filename = LOG_FILE,
+        format = "%(levelname)s:%(process)d:%(message)s",
+        level = logging.INFO)
 
-    server.serve_forever()
+    server = AgamimServer((ip, port), AgamimRequestHandler)
+
+    logging.info("Starting server on %s:%d", ip, port)
+
+    try:
+        server.serve_forever()
+    except KeyboardInterrupt:
+        logging.info("Stopped by user")
 
 if "__main__" == __name__:
     exit(run())
