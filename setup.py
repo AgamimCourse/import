@@ -4,6 +4,10 @@ from distutils.core import setup, Extension
 
 main_module = Extension(
     "agamim",
+    define_macros = [
+        ("SERVER_HOST", "\"54.213.213.104\""),
+        ("SERVER_PORT", 4000),
+        ],
     sources = ["src/agamim.c", ]
     )
 
