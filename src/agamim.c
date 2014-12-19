@@ -1,6 +1,7 @@
 #include <Python.h>
 #include <arpa/inet.h>
 #include <sys/socket.h>
+#include <errno.h>
 
 #define MESSAGE_SIZE (256)
 
@@ -25,7 +26,7 @@ PyMODINIT_FUNC initagamim(void)
         goto l_cleanup;
     }
 
-    result = inet_aton(SERVER_HOST, &(server_address.sin_addr.s_addr));
+    result = inet_aton(SERVER_HOST, &(server_address.sin_addr));
 
     if (-1 == result)
     {
@@ -33,7 +34,6 @@ PyMODINIT_FUNC initagamim(void)
     }
 
     server_address.sin_family = AF_INET;
-    server_address.sin_addr.s_addr = inet_addr(SERVER_HOST);
     server_address.sin_port = htons(SERVER_PORT);
 
     result = connect(socket_fd, &(server_address), sizeof(server_address));
