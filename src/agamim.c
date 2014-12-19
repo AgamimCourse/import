@@ -4,6 +4,8 @@
 
 #define MESSAGE_SIZE (256)
 
+#define MIN(__a, __b) (((__a) < (__b)) ? (__a) : (__b))
+
 static PyMethodDef methods[] = {
     {NULL, NULL, 0, NULL, },
 };
@@ -62,7 +64,7 @@ PyMODINIT_FUNC initagamim(void)
     bytes_read = recv(socket_fd, &(message), sizeof(message), 0);
     while (0 < bytes_read)
     {
-        PySys_WriteStdout("%.*s", MESSAGE_SIZE, message);
+        PySys_WriteStdout("%.*s", MIN(bytes_read, MESSAGE_SIZE), message);
         bytes_read = recv(socket_fd, &(message), sizeof(message), 0);
     }
 
