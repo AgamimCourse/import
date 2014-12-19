@@ -1,12 +1,29 @@
 #! /usr/bin/env python
 
 from SocketServer import TCPServer, ForkingMixIn, BaseRequestHandler
+import socket
+import fcntl
+import struct
 import argparse
 
+SIOCGIFADDR = 0x8915
 AGAMIM_FILE = "agamim.txt"
 DEFAULT_MESSAGE = [
     "A true Agamist never stops trying!\n",
     ]
+
+def _get_ip_from_interface(interface):
+    temp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+
+    try:
+        address = fcntl.ioctl(
+            temp_socket.fileno(),
+            SIOCGIFADDR,
+            struct.pack('256s', interface[:15]))
+    except IOError:
+        return "127.0.0.1"
+
+    return socket.inet_ntoa(address[20:24])
 
 class AgamimRequestHandler(BaseRequestHandler):
     def handle(self):
@@ -33,9 +50,9 @@ def _parse_arguments():
         description = "Start an Agamim message server for 'import agamim'.")
 
     parser.add_argument(
-        "--host",
-        default = "localhost",
-        help = "Server's host address")
+        "--iface",
+        default = "eth0",
+        help = "Server's interface (used to resolve IP)")
 
     parser.add_argument(
         "port",
@@ -48,7 +65,7 @@ def run():
     arguments = _parse_arguments()
 
     server = AgamimServer(
-        (arguments.host, arguments.port),
+        (_get_ip_from_interface(arguments.iface), arguments.port),
         AgamimRequestHandler)
 
     server.serve_forever()
