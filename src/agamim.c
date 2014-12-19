@@ -1,7 +1,6 @@
 #include <Python.h>
 #include <arpa/inet.h>
 #include <sys/socket.h>
-#include <errno.h>
 
 #define MESSAGE_SIZE (256)
 
